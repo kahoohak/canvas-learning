@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>刮刮卡</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      .text {
+        position: absolute;
+        left: 130px;
+        top: 35px;
+        z-index: -1;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="400" height="100"></canvas>
+    <div class="text">恭喜您获得100w</div>
+    <script>
+      const canvas = document.getElementById("canvas");
+
+      if (canvas.getContext) {
+        const ctx = canvas.getContext("2d");
+
+        // 用灰色填充矩阵
+        ctx.fillStyle = "darkgray";
+        ctx.fillRect(0, 0, 400, 100);
+
+        // 绘制填充文字
+        ctx.fillStyle = "#fff";
+        ctx.fillText("刮刮卡", 180, 50);
+
+        // 是否允许擦除
+        let isClear = false;
+
+        canvas.onmousedown = () => {
+          isClear = true;
+        };
+
+        canvas.onmouseup = () => {
+          isClear = false;
+        };
+
+        canvas.onmousemove = (e) => {
+          if (!isClear) return;
+
+          // 鼠标绘制中心点坐标
+          const x = e.pageX - canvas.offsetLeft;
+          const y = e.pageY - canvas.offsetTop;
+
+          // 设置源图像（擦除的透明层）和目标图像（灰色层）的层级模式
+          ctx.globalCompositeOperation = "destination-out";
+
+          // 绘制透明圆
+          ctx.arc(x, y, 10, 0, 2 * Math.PI);
+          ctx.fill();
+        };
+      }
+    </script>
+  </body>
+</html>
