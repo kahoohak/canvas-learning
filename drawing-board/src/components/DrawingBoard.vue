@@ -9,10 +9,10 @@
       <el-button @click="clear">清空</el-button>
       <el-button @click="save">保存</el-button>
     </el-space>
-    <canvas 
-      id="canvas" 
-      width="800" 
-      height="400" 
+    <canvas
+      id="canvas"
+      width="800"
+      height="400"
       @mousedown="mousedown"
       @mousemove="mousemove"
       @mouseup="mouseup"
@@ -30,26 +30,84 @@ const changeType = (val: string): string => type.value = val
 
 const color = ref<string>('#000')
 
-const clear = () => {}
-const save = () => {}
+const clear = () => {
+  imageData.value = null
+  ctx.value?.clearRect(0, 0, 800, 400)
+}
+const save = () => {
+  const url = canvasDom.value!.toDataURL()
+  const a = document.createElement('a')
+  a.download = 'kaho'
+  a.href = url
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}
 
 // canvas
 const canvasDom = ref<HTMLCanvasElement | null>(null)
 const ctx = ref<CanvasRenderingContext2D | null>(null)
 const isDraw = ref<boolean>(false)
+const beginX = ref(0)
+const beginY = ref(0)
+const imageData = ref<ImageData | null>(null)
 
-const drawPen = () => {}
-const drawRect = () => {}
-const drawArc = () => {}
-
-const mousedown = () => isDraw.value = true
-const mousemove = () => {
-  if(!isDraw.value) return
-  if(type.value === 'pen') drawPen()
-  if(type.value === 'rect') drawRect()
-  if(type.value === 'arc') drawArc()
+const drawPen = (x: number, y: number) => {
+  if(!ctx.value) return
+  ctx.value.beginPath()
+  ctx.value.arc(x, y, 5, 0, 2 * Math.PI)
+  ctx.value.fillStyle = color.value
+  ctx.value.fill()
+  ctx.value.closePath()
 }
-const mouseup = () => isDraw.value = false
+const drawRect = (x: number, y: number) => {
+  if(!ctx.value) return
+  ctx.value.clearRect(0, 0, 800, 400)
+  if(imageData.value) ctx.value.putImageData(imageData.value, 0, 0, 0, 0, 800, 400)
+  ctx.value.beginPath()
+  ctx.value.strokeStyle = color.value
+  ctx.value.rect(beginX.value, beginY.value, x - beginX.value, y - beginY.value)
+  ctx.value.stroke()
+  ctx.value.closePath()
+}
+const drawArc = (x: number, y: number) => {
+  if(!ctx.value) return
+  ctx.value.clearRect(0, 0, 800, 400)
+  if(imageData.value) ctx.value.putImageData(imageData.value, 0, 0, 0, 0, 800, 400)
+  ctx.value.beginPath()
+  ctx.value.strokeStyle = color.value
+  ctx.value.arc(
+    beginX.value, 
+    beginY.value, 
+    Math.round(
+      Math.sqrt(
+        (x - beginX.value) * (x - beginX.value) + (y - beginY.value) * (y - beginY.value)
+      )
+    ), 
+    0, 2 * Math.PI
+  )
+  ctx.value.stroke()
+  ctx.value.closePath()
+}
+
+const mousedown = (e) => {
+  isDraw.value = true
+  beginX.value = e.pageX - canvasDom.value!.offsetLeft
+  beginY.value = e.pageY - canvasDom.value!.offsetTop
+}
+const mousemove = (e: any) => {
+  if(!isDraw.value) return
+  const x = e.pageX - canvasDom.value!.offsetLeft
+  const y = e.pageY - canvasDom.value!.offsetTop
+  if(type.value === 'pen') drawPen(x, y)
+  if(type.value === 'rect') drawRect(x, y)
+  if(type.value === 'arc') drawArc(x, y)
+}
+const mouseup = () => {
+  if(!ctx.value) return
+  isDraw.value = false
+  imageData.value = ctx.value.getImageData(0, 0, 800, 400)
+}
 
 // 初始化
 onMounted(() => {
